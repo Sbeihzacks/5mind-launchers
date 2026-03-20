@@ -30,7 +30,9 @@ Build a clean, functional web app ("The Council Chamber") that lets users paste 
 - No launcher/shortcut app (deferred)
 - No multi-project Claude prompt management
 
-## Current Status: Not Started
+## Current Status: Step 1 Complete
+
+Web app built and deployed to https://sbeihzacks.github.io/5mind-launchers/council.html
 
 ## Build Order
 
