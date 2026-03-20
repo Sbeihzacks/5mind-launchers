@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TM Builder">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0e0a06">
+<title>5Mind Builder</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0e0a06;--bg2:#1a1208;--bg3:#251a0a;--orange:#D85A30;--orange-bright:#EF7A48;--orange-dim:#8C3A1E;--amber:#EF9F27;--text:#f0e8dc;--muted:#7a5a3a;--mono:'Courier New',monospace;}
+html,body{height:100%;width:100%;background:var(--bg);color:var(--text);font-family:var(--mono);overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none}
+.grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(216,90,48,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(216,90,48,.04) 1px,transparent 1px);background-size:80px 80px;animation:gridDrift 30s linear infinite}
+@keyframes gridDrift{to{background-position:80px 80px}}
+.embers{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.ember{position:absolute;width:2px;height:2px;background:var(--amber);border-radius:50%;opacity:0;animation:rise var(--d,4s) var(--delay,0s) ease-in infinite}
+@keyframes rise{0%{opacity:0;transform:translate(0,0)}20%{opacity:.8}100%{opacity:0;transform:translate(var(--dx,20px),calc(-100vh - 20px))}}
+.corner{position:fixed;width:52px;height:52px;z-index:2}
+.corner.tl{top:24px;left:16px;border-top:1.5px solid var(--orange-dim);border-left:1.5px solid var(--orange-dim)}
+.corner.tr{top:24px;right:16px;border-top:1.5px solid var(--orange-dim);border-right:1.5px solid var(--orange-dim)}
+.corner.bl{bottom:16px;left:16px;border-bottom:1.5px solid var(--orange-dim);border-left:1.5px solid var(--orange-dim)}
+.corner.br{bottom:16px;right:16px;border-bottom:1.5px solid var(--orange-dim);border-right:1.5px solid var(--orange-dim)}
+.step-strip{position:fixed;top:0;left:0;right:0;height:24px;background:var(--bg2);border-bottom:1px solid rgba(216,90,48,.2);display:flex;align-items:center;justify-content:center;gap:12px;z-index:10}
+.step-dot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.step-dot.active{background:var(--orange)}
+.step-label{font-size:8px;color:var(--muted);letter-spacing:2px}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(24px + env(safe-area-inset-top,10px)) 28px env(safe-area-inset-bottom,20px)}
+.logo-wrap{margin-bottom:28px}
+.logo-hex{width:96px;height:96px;display:flex;align-items:center;justify-content:center;position:relative}
+.frame-outer{position:absolute;inset:0;border:1px solid rgba(216,90,48,.2);border-radius:6px;animation:frameSpin 25s linear infinite}
+@keyframes frameSpin{to{transform:rotate(360deg)}}
+.frame-mid{position:absolute;inset:10px;border:1px solid rgba(216,90,48,.15);border-radius:4px;animation:frameSpin 18s linear infinite reverse}
+.logo-core{position:absolute;inset:18px;background:var(--bg3);border:1px solid rgba(216,90,48,.5);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.logo-tm{font-size:18px;font-weight:700;color:var(--orange-bright);letter-spacing:2px}
+.logo-sub{font-size:7px;color:var(--amber);letter-spacing:2px;opacity:.85}
+.build-bar-wrap{width:160px;margin-bottom:24px}
+.build-bar-label{font-size:8px;color:var(--muted);letter-spacing:2px;margin-bottom:5px;display:flex;justify-content:space-between}
+.build-bar-bg{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.build-bar-fill{height:100%;width:0%;border-radius:2px;background:linear-gradient(90deg,var(--orange-dim),var(--orange-bright));animation:buildFill 1.8s .5s ease forwards}
+@keyframes buildFill{to{width:100%}}
+.brand{font-size:9px;color:var(--muted);letter-spacing:5px;margin-bottom:5px}
+.title{font-size:32px;font-weight:700;color:var(--text);letter-spacing:-1px;line-height:1;margin-bottom:5px}
+.title span{color:var(--orange-bright)}
+.tagline{font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:32px}
+.outputs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:32px}
+.output-pill{font-size:8px;padding:3px 8px;border-radius:2px;letter-spacing:1px;border:1px solid rgba(216,90,48,.3);color:var(--muted)}
+.output-pill.lit{border-color:var(--orange-dim);color:var(--orange-bright)}
+.launch-btn{width:240px;height:52px;background:transparent;border:1px solid var(--orange-dim);border-radius:3px;color:var(--orange-bright);font-family:var(--mono);font-size:11px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:10px;-webkit-tap-highlight-color:transparent}
+.launch-btn::before{content:'';position:absolute;inset:0;background:var(--orange);transform:translateX(-101%);transition:transform .25s ease;opacity:.1}
+.launch-btn:active::before{transform:translateX(0)}
+.version{position:fixed;bottom:calc(env(safe-area-inset-bottom,14px) + 36px);left:0;right:0;text-align:center;font-size:8px;color:var(--muted);letter-spacing:2px;opacity:.5;z-index:3}
+.progress-bar{position:fixed;bottom:0;left:0;height:2px;width:0%;background:var(--orange-bright);z-index:10;transition:width .9s ease}
+.progress-bar.loading{width:100%}
+.status-msg{position:fixed;bottom:calc(env(safe-area-inset-bottom,14px) + 18px);left:0;right:0;text-align:center;font-size:9px;color:var(--muted);letter-spacing:2px;opacity:0;transition:opacity .3s;z-index:3}
+.status-msg.visible{opacity:1}
+</style>
+</head>
+<body>
+<div class="grid"></div>
+<div class="embers" id="embers"></div>
+<div class="step-strip">
+  <span class="step-label">build flow</span>
+  <div class="step-dot active"></div>
+  <div class="step-dot"></div>
+  <div class="step-dot"></div>
+  <div class="step-dot"></div>
+  <div class="step-dot"></div>
+  <span class="step-label">5 outputs</span>
+</div>
+<div class="corner tl"></div>
+<div class="corner tr"></div>
+<div class="corner bl"></div>
+<div class="corner br"></div>
+<div class="screen">
+  <div class="logo-wrap">
+    <div class="logo-hex">
+      <div class="frame-outer"></div>
+      <div class="frame-mid"></div>
+      <div class="logo-core">
+        <div class="logo-tm">TM</div>
+        <div class="logo-sub">BUILD</div>
+      </div>
+    </div>
+  </div>
+  <div class="build-bar-wrap">
+    <div class="build-bar-label"><span>initialising</span><span>ready</span></div>
+    <div class="build-bar-bg"><div class="build-bar-fill"></div></div>
+  </div>
+  <div class="brand">5Mind</div>
+  <div class="title"><span>B</span>uilder</div>
+  <div class="tagline">qualify · architect · deploy</div>
+  <div class="outputs">
+    <div class="output-pill lit">A · instructions</div>
+    <div class="output-pill lit">B · context doc</div>
+    <div class="output-pill lit">C · launcher</div>
+    <div class="output-pill lit">D · master update</div>
+    <div class="output-pill lit">E · checklist</div>
+  </div>
+  <button class="launch-btn" onclick="launch()">Open Builder &rarr;</button>
+</div>
+<div class="version">5MIND BUILDER · V1.0</div>
+<div class="progress-bar" id="progress"></div>
+<div class="status-msg" id="status">opening project builder...</div>
+<script>
+const PROJECT_URL='https://claude.ai/project/019d0a7c-5388-7661-8e3c-22ee33c2cd57';
+const container=document.getElementById('embers');
+for(let i=0;i<18;i++){const e=document.createElement('div');e.className='ember';e.style.cssText='left:'+Math.random()*100+'%;bottom:'+Math.random()*20+'%;--d:'+(3+Math.random()*5)+'s;--delay:'+Math.random()*6+'s;--dx:'+((Math.random()-.5)*60)+'px;';container.appendChild(e);}
+const dots=document.querySelectorAll('.step-dot');let di=0;
+setInterval(()=>{dots.forEach(d=>d.classList.remove('active'));dots[di%dots.length].classList.add('active');di++;},700);
+function launch(){document.getElementById('progress').classList.add('loading');document.getElementById('status').classList.add('visible');setTimeout(()=>{window.location.href=PROJECT_URL;},1000);}
+if(sessionStorage.getItem('tm_builder_launched'))launch();
+</script>
+</body>
+</html>
