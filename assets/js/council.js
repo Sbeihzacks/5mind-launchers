@@ -298,6 +298,72 @@ function retrySlot(slotId) {
   }
 }
 
+// === Paste Brief ===
+function openBriefModal() {
+  document.getElementById('brief-input').value = '';
+  document.getElementById('brief-overlay').classList.add('open');
+}
+
+function closeBriefModal() {
+  document.getElementById('brief-overlay').classList.remove('open');
+}
+
+function parseBrief() {
+  const input = document.getElementById('brief-input').value;
+  if (!input.trim()) return;
+
+  const slots = getSlots();
+  const slotLabels = slots.map(s => s.label.toUpperCase());
+
+  // Match sections like: ──── FOR GEMINI (anything) ──── or ──── FOR GEMINI ────
+  // Also match: ──── GEMINI (anything) ──── or ──── GEMINI ────
+  const sections = {};
+  const pattern = /[─\-]{2,}\s*(?:FOR\s+)?(\w+)(?:\s*\([^)]*\))?\s*[─\-]{2,}/gi;
+  let match;
+  const markers = [];
+
+  while ((match = pattern.exec(input)) !== null) {
+    const label = match[1].toUpperCase();
+    // Check if this label matches a slot or is SKIPPING
+    if (label === 'SKIPPING' || label === 'SKIP') continue;
+    if (slotLabels.includes(label)) {
+      markers.push({ label, index: match.index, end: match.index + match[0].length });
+    }
+  }
+
+  // Extract content between markers
+  for (let i = 0; i < markers.length; i++) {
+    const start = markers[i].end;
+    const end = i + 1 < markers.length ? markers[i + 1].index : input.length;
+    const content = input.slice(start, end).trim();
+    // Remove any trailing SKIPPING sections from the content
+    const skipIdx = content.search(/[─\-]{2,}\s*(?:SKIPPING|SKIP)/i);
+    sections[markers[i].label] = skipIdx >= 0 ? content.slice(0, skipIdx).trim() : content;
+  }
+
+  // Fill slots
+  let filled = 0;
+  slots.forEach(slot => {
+    const content = sections[slot.label.toUpperCase()];
+    if (content) {
+      slotStates[slot.id] = { status: 'empty', response: '', time: 0, tokens: 0, error: '' };
+      renderAllSlots();
+      const el = document.getElementById('prompt-' + slot.id);
+      if (el) {
+        el.value = content;
+        filled++;
+      }
+    }
+  });
+
+  closeBriefModal();
+  if (filled > 0) {
+    showToast(`Filled ${filled} slot${filled > 1 ? 's' : ''}`);
+  } else {
+    showToast('No matching sections found');
+  }
+}
+
 // === Copy Single Result ===
 async function copySingleResult(slotId) {
   const slots = getSlots();
@@ -388,5 +454,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('settings-save-btn').addEventListener('click', saveSettings);
   document.getElementById('settings-overlay').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeSettings();
+  });
+  document.getElementById('paste-brief-btn').addEventListener('click', openBriefModal);
+  document.getElementById('brief-close-btn').addEventListener('click', closeBriefModal);
+  document.getElementById('brief-cancel-btn').addEventListener('click', closeBriefModal);
+  document.getElementById('brief-parse-btn').addEventListener('click', parseBrief);
+  document.getElementById('brief-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeBriefModal();
   });
 });

@@ -13,6 +13,7 @@
       <span class="header-version">v1</span>
     </div>
     <div class="header-right">
+      <button id="paste-brief-btn" class="btn btn-paste-brief">Paste Brief</button>
       <button id="fire-all-btn" class="btn btn-fire-all">Fire All</button>
       <button id="settings-btn" class="btn btn-icon" aria-label="Settings">&#9881;</button>
     </div>
@@ -25,6 +26,23 @@
   <footer class="footer" id="footer">
     <button id="copy-all-btn" class="btn btn-copy-all" style="display:none;">Copy All Results</button>
   </footer>
+
+  <!-- Paste Brief Modal -->
+  <div class="settings-overlay" id="brief-overlay">
+    <div class="brief-modal">
+      <div class="settings-header">
+        <h2>Paste Council Brief</h2>
+        <button id="brief-close-btn" class="btn btn-icon" aria-label="Close">&times;</button>
+      </div>
+      <div class="brief-body">
+        <textarea class="brief-textarea" id="brief-input" placeholder="Paste Claude's /council output here..."></textarea>
+      </div>
+      <div class="settings-footer">
+        <button id="brief-cancel-btn" class="btn btn-secondary">Cancel</button>
+        <button id="brief-parse-btn" class="btn btn-primary">Parse & Fill Slots</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Settings Panel Overlay -->
   <div class="settings-overlay" id="settings-overlay">
