@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>5Mind Council</title>
+  <link rel="stylesheet" href="assets/css/council.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-left">
+      <h1 class="header-title">5Mind Council</h1>
+      <span class="header-version">v1</span>
+    </div>
+    <div class="header-right">
+      <button id="fire-all-btn" class="btn btn-fire-all">Fire All</button>
+      <button id="settings-btn" class="btn btn-icon" aria-label="Settings">&#9881;</button>
+    </div>
+  </header>
+
+  <main class="slots" id="slots-container">
+    <!-- Slots rendered by JS -->
+  </main>
+
+  <footer class="footer" id="footer">
+    <button id="copy-all-btn" class="btn btn-copy-all" style="display:none;">Copy All Results</button>
+  </footer>
+
+  <!-- Settings Panel Overlay -->
+  <div class="settings-overlay" id="settings-overlay">
+    <div class="settings-panel" id="settings-panel">
+      <div class="settings-header">
+        <h2>Settings</h2>
+        <button id="settings-close-btn" class="btn btn-icon" aria-label="Close">&times;</button>
+      </div>
+      <div class="settings-body" id="settings-body">
+        <!-- Rendered by JS -->
+      </div>
+      <div class="settings-footer">
+        <button id="settings-cancel-btn" class="btn btn-secondary">Cancel</button>
+        <button id="settings-save-btn" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/council.js"></script>
+</body>
+</html>
