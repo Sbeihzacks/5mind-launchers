@@ -144,20 +144,14 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);font-fam
 <div class="progress-bar" id="progress"></div>
 <div class="status-msg" id="status">opening in Claude app...</div>
 <script>
-const PROJECT_ID = '019d0a7c-5388-7661-8e3c-22ee33c2cd57';
-const WEB_URL = 'https://claude.ai/project/' + PROJECT_ID;
+// claude.ai has Android App Links (assetlinks.json) configured for com.anthropic.claude
+// AND iOS Universal Links (apple-app-site-association) configured for the Claude app.
+// This means https://claude.ai/... WILL open the Claude app directly —
+// BUT only when triggered from OUTSIDE the PWA shell.
+// window.open(_blank) breaks out of the PWA standalone context and
+// hands the URL to the OS, which then routes it into the Claude app.
 
-// Android intent URL — opens Claude app directly, falls back to web
-const ANDROID_INTENT = 'intent://claude.ai/project/' + PROJECT_ID +
-  '#Intent;scheme=https;package=com.anthropic.claude;' +
-  'S.browser_fallback_url=' + encodeURIComponent(WEB_URL) + ';end';
-
-// iOS universal link — Claude app registers claude.ai as associated domain
-// so a normal https URL will open in the app if installed
-const IOS_URL = WEB_URL;
-
-function isAndroid(){ return /android/i.test(navigator.userAgent); }
-function isIOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent); }
+const PROJECT_URL = 'https://claude.ai/project/019d0a7c-5388-7661-8e3c-22ee33c2cd57';
 
 const container = document.getElementById('embers');
 for(let i=0;i<18;i++){
@@ -172,19 +166,17 @@ setInterval(()=>{dots.forEach(d=>d.classList.remove('active'));dots[di%dots.leng
 function launch(){
   document.getElementById('progress').classList.add('loading');
   document.getElementById('status').classList.add('visible');
-  setTimeout(()=>{
-    if(isAndroid()){
-      // Try intent URL first — opens Claude app directly on Android
-      window.location.href = ANDROID_INTENT;
-    } else {
-      // iOS: universal links mean claude.ai opens in the app automatically
-      // if Claude app is installed and has associated domains configured
-      window.location.href = IOS_URL;
-    }
-  }, 800);
+  // Create a real anchor and programmatically click it.
+  // _blank breaks out of PWA standalone shell → OS receives the URL →
+  // Android App Links / iOS Universal Links route it into the Claude app.
+  const a = document.createElement('a');
+  a.href = PROJECT_URL;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  setTimeout(()=>{ a.click(); document.body.removeChild(a); }, 800);
 }
 
-if(sessionStorage.getItem('tm_builder_launched')) launch();
 document.querySelector('.launch-btn').addEventListener('touchstart',()=>{},{passive:true});
 </script>
 </body>
