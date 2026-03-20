@@ -15,6 +15,23 @@ const PRESET_MODELS = {
   grok: ['x-ai/grok-4-1-fast', 'x-ai/grok-4-1'],
 };
 
+// === Native API endpoints ===
+const NATIVE_APIS = {
+  gemini: {
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
+    keyParam: true, // uses ?key= instead of Bearer token
+  },
+  gpt: {
+    endpoint: 'https://api.openai.com/v1/chat/completions',
+  },
+  deepseek: {
+    endpoint: 'https://api.deepseek.com/v1/chat/completions',
+  },
+  grok: {
+    endpoint: 'https://api.x.ai/v1/chat/completions',
+  },
+};
+
 // === State ===
 const slotStates = {};
 
@@ -25,6 +42,24 @@ function getApiKey() {
 
 function setApiKey(key) {
   localStorage.setItem('openrouter_api_key', key);
+}
+
+function getSlotApiKey(slotId) {
+  return localStorage.getItem('native_api_key_' + slotId) || '';
+}
+
+function setSlotApiKey(slotId, key) {
+  if (key) {
+    localStorage.setItem('native_api_key_' + slotId, key);
+  } else {
+    localStorage.removeItem('native_api_key_' + slotId);
+  }
+}
+
+function getNativeModelId(model) {
+  // Strip vendor prefix: "google/gemini-2.5-pro" → "gemini-2.5-pro"
+  const parts = model.split('/');
+  return parts.length > 1 ? parts[1] : model;
 }
 
 function getSlots() {
@@ -135,11 +170,16 @@ function openSettings() {
         <div class="settings-slot-title">
           <span class="slot-badge" style="background:${slot.color}">${slot.label}</span>
         </div>
-        <label class="settings-label">Model</label>
+        <label class="settings-label">Native API Key <span style="color:var(--text-muted);font-weight:400">(optional — uses OpenRouter if empty)</span></label>
+        <div class="api-key-wrapper">
+          <input class="settings-input" id="settings-native-key-${slot.id}" type="password" placeholder="Paste ${slot.label} API key...">
+          <button class="api-key-toggle" onclick="toggleNativeKeyVisibility('${slot.id}')">show</button>
+        </div>
+        <label class="settings-label" style="margin-top:8px">Model</label>
         <select class="settings-select" id="settings-model-${slot.id}" onchange="toggleCustomModel('${slot.id}')">
           ${optionsHTML}
         </select>
-        <input class="settings-input" id="settings-custom-${slot.id}" placeholder="Enter OpenRouter model ID" style="margin-top:6px;display:${isCustom ? 'block' : 'none'}">
+        <input class="settings-input" id="settings-custom-${slot.id}" placeholder="Enter model ID" style="margin-top:6px;display:${isCustom ? 'block' : 'none'}">
       </div>
     `;
   });
@@ -161,6 +201,8 @@ function openSettings() {
     const customInput = document.getElementById('settings-custom-' + slot.id);
     const isCustom = !(PRESET_MODELS[slot.id] || []).includes(slot.model);
     if (isCustom && customInput) customInput.value = slot.model;
+    const nativeKeyInput = document.getElementById('settings-native-key-' + slot.id);
+    if (nativeKeyInput) nativeKeyInput.value = getSlotApiKey(slot.id);
   });
 
   overlay.classList.add('open');
@@ -183,6 +225,8 @@ function saveSettings() {
     } else {
       slot.model = select.value;
     }
+    const nativeKey = document.getElementById('settings-native-key-' + slot.id).value.trim();
+    setSlotApiKey(slot.id, nativeKey);
   });
   saveSlots(slots);
 
@@ -194,6 +238,18 @@ function toggleCustomModel(slotId) {
   const select = document.getElementById('settings-model-' + slotId);
   const custom = document.getElementById('settings-custom-' + slotId);
   custom.style.display = select.value === '__custom' ? 'block' : 'none';
+}
+
+function toggleNativeKeyVisibility(slotId) {
+  const input = document.getElementById('settings-native-key-' + slotId);
+  const btn = input.nextElementSibling;
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = 'hide';
+  } else {
+    input.type = 'password';
+    btn.textContent = 'show';
+  }
 }
 
 function toggleApiKeyVisibility() {
@@ -235,6 +291,67 @@ async function callOpenRouter(model, prompt) {
   return res.json();
 }
 
+async function callNativeGemini(model, prompt, apiKey) {
+  const modelId = getNativeModelId(model);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelId)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Gemini API error: ${res.status}`);
+  }
+
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '(empty response)';
+  const tokens = (data.usageMetadata?.promptTokenCount || 0) + (data.usageMetadata?.candidatesTokenCount || 0);
+  return { choices: [{ message: { content: text } }], usage: { total_tokens: tokens } };
+}
+
+async function callNativeOpenAICompatible(endpoint, model, prompt, apiKey) {
+  const modelId = getNativeModelId(model);
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: modelId,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API error: ${res.status}`);
+  }
+
+  return res.json();
+}
+
+async function callSlotAPI(slotId, model, prompt) {
+  const nativeKey = getSlotApiKey(slotId);
+
+  if (nativeKey) {
+    const native = NATIVE_APIS[slotId];
+    if (slotId === 'gemini') {
+      return callNativeGemini(model, prompt, nativeKey);
+    } else if (native) {
+      return callNativeOpenAICompatible(native.endpoint, model, prompt, nativeKey);
+    }
+  }
+
+  return callOpenRouter(model, prompt);
+}
+
 // === Fire Logic ===
 async function fireSlot(slotId) {
   const promptEl = document.getElementById('prompt-' + slotId);
@@ -257,7 +374,7 @@ async function fireSlot(slotId) {
   }, 100);
 
   try {
-    const data = await callOpenRouter(slot.model, prompt);
+    const data = await callSlotAPI(slot.id, slot.model, prompt);
     clearInterval(timerInterval);
     const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
     const content = data.choices?.[0]?.message?.content || '(empty response)';
