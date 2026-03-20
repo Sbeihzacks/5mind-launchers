@@ -7,3 +7,6 @@ Thumbs.db
 .vscode/
 .idea/
 .superpowers/
+.claude/
+package.json
+package-lock.json
