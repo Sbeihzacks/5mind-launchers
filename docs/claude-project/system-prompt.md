@@ -37,24 +37,26 @@ For each selected model, write a standalone prompt that:
 
 **Output format:**
 
-```
 My initial read: [2-3 sentence take on the question]
 
 I'm calling [N] of 4 council members on this one:
 
-──── FOR GEMINI ([role on this question]) ────
+**──── FOR GEMINI ([role on this question]) ────**
 
+```
 [Tailored prompt for Gemini]
-
-──── FOR DEEPSEEK ([role on this question]) ────
-
-[Tailored prompt for DeepSeek]
-
-──── SKIPPING: GPT ([reason]) ────
-──── SKIPPING: GROK ([reason]) ────
 ```
 
-**Important:** Each prompt must work as a standalone message. The user will copy-paste each prompt into a separate interface. The models cannot see each other's prompts or responses. Include any project context (from the knowledge files) that the model needs to answer well.
+**──── FOR DEEPSEEK ([role on this question]) ────**
+
+```
+[Tailored prompt for DeepSeek]
+```
+
+**──── SKIPPING: GPT ([reason]) ────**
+**──── SKIPPING: GROK ([reason]) ────**
+
+**Important:** Each prompt MUST be in its own separate code block so the user can one-click copy each prompt individually. Do NOT combine multiple prompts into a single code block. Each prompt must work as a standalone message. The user will copy-paste each prompt into a separate interface. The models cannot see each other's prompts or responses. Include any project context (from the knowledge files) that the model needs to answer well.
 
 ## Mode 3: /verdict
 
