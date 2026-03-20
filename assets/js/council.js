@@ -209,6 +209,57 @@ function retrySlot(slotId) {
   }
 }
 
+// === Copy All Results ===
+function formatResults() {
+  const slots = getSlots();
+  let output = '\uD83D\uDCCB COUNCIL RESULTS\n';
+
+  slots.forEach(slot => {
+    const state = slotStates[slot.id];
+    if (!state) return;
+
+    if (state.status === 'complete') {
+      output += `\n\u2500\u2500\u2500\u2500 ${slot.label} \u2500\u2500\u2500\u2500\n`;
+      output += `Response time: ${state.time}s | Tokens: ${state.tokens}\n\n`;
+      output += state.response + '\n';
+    } else if (state.status === 'error') {
+      output += `\n\u2500\u2500\u2500\u2500 ${slot.label} \u2500\u2500\u2500\u2500\n`;
+      output += `ERROR: ${state.error}\n`;
+    }
+  });
+
+  return output;
+}
+
+async function copyAllResults() {
+  const text = formatResults();
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('Copied!');
+  } catch {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Copied!');
+  }
+}
+
+function showToast(message) {
+  let toast = document.querySelector('.toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.className = 'toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1500);
+}
+
 // === Init ===
 document.addEventListener('DOMContentLoaded', () => {
   renderAllSlots();
@@ -216,4 +267,5 @@ document.addEventListener('DOMContentLoaded', () => {
     openSettings();
   }
   document.getElementById('fire-all-btn').addEventListener('click', fireAll);
+  document.getElementById('copy-all-btn').addEventListener('click', copyAllResults);
 });
