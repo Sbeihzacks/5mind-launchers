@@ -14,74 +14,34 @@
   var c=document.createElement('canvas');
   c.width=180;c.height=180;
   var ctx=c.getContext('2d');
-
-  // Background — dark rounded square
   ctx.fillStyle='#0e0a06';
-  ctx.beginPath();
-  ctx.roundRect(0,0,180,180,36);
-  ctx.fill();
-
-  // Outer rotating square border
+  ctx.beginPath();ctx.roundRect(0,0,180,180,36);ctx.fill();
   ctx.save();ctx.translate(90,80);ctx.rotate(Math.PI/12);
   ctx.strokeStyle='rgba(216,90,48,0.5)';ctx.lineWidth=1.5;
   ctx.beginPath();ctx.roundRect(-44,-44,88,88,6);ctx.stroke();ctx.restore();
-
-  // Inner diamond border
   ctx.save();ctx.translate(90,80);ctx.rotate(Math.PI/4);
   ctx.strokeStyle='rgba(216,90,48,0.3)';ctx.lineWidth=1;
   ctx.beginPath();ctx.roundRect(-32,-32,64,64,4);ctx.stroke();ctx.restore();
-
-  // Core box
-  ctx.fillStyle='#251a0a';
-  ctx.strokeStyle='rgba(216,90,48,0.85)';ctx.lineWidth=1.5;
+  ctx.fillStyle='#251a0a';ctx.strokeStyle='rgba(216,90,48,0.85)';ctx.lineWidth=1.5;
   ctx.beginPath();ctx.roundRect(57,48,66,64,10);ctx.fill();ctx.stroke();
-
-  // "5M" text
-  ctx.fillStyle='#EF7A48';
-  ctx.font='bold 28px "Courier New",monospace';
-  ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText('5M',90,74);
-
-  // "BUILDer" text
-  ctx.fillStyle='#EF9F27';
-  ctx.font='bold 9px "Courier New",monospace';
+  ctx.fillStyle='#EF7A48';ctx.font='bold 28px "Courier New",monospace';
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('5M',90,74);
+  ctx.fillStyle='#EF9F27';ctx.font='bold 9px "Courier New",monospace';
   ctx.fillText('BUILDer',90,96);
-
-  // ── Claude logo badge (bottom-right) ──
-  // White circle background
-  var bx=138, by=138, br=22;
-  ctx.beginPath();
-  ctx.arc(bx,by,br,0,Math.PI*2);
-  ctx.fillStyle='#ffffff';
-  ctx.fill();
-
-  // Claude logo — the Anthropic "A" mark drawn as radiating lines
-  ctx.save();
-  ctx.translate(bx,by);
-  var arms=8, innerR=5, outerR=14;
-  ctx.strokeStyle='#d97757'; // Claude orange-coral
-  ctx.lineWidth=2.2;
-  ctx.lineCap='round';
+  var bx=138,by=138,br=22;
+  ctx.beginPath();ctx.arc(bx,by,br,0,Math.PI*2);ctx.fillStyle='#ffffff';ctx.fill();
+  ctx.save();ctx.translate(bx,by);
+  var arms=8,innerR=5,outerR=14;
+  ctx.strokeStyle='#d97757';ctx.lineWidth=2.2;ctx.lineCap='round';
   for(var i=0;i<arms;i++){
-    var angle=(i/arms)*Math.PI*2 - Math.PI/2;
-    // Vary length alternately for the asterisk look
-    var len = (i%2===0) ? outerR : outerR*0.72;
-    ctx.beginPath();
-    ctx.moveTo(Math.cos(angle)*innerR, Math.sin(angle)*innerR);
-    ctx.lineTo(Math.cos(angle)*len, Math.sin(angle)*len);
-    ctx.stroke();
+    var angle=(i/arms)*Math.PI*2-Math.PI/2;
+    var len=(i%2===0)?outerR:outerR*0.72;
+    ctx.beginPath();ctx.moveTo(Math.cos(angle)*innerR,Math.sin(angle)*innerR);
+    ctx.lineTo(Math.cos(angle)*len,Math.sin(angle)*len);ctx.stroke();
   }
   ctx.restore();
-
-  // Inject as apple-touch-icon + favicon
-  var link=document.createElement('link');
-  link.rel='apple-touch-icon';
-  link.href=c.toDataURL('image/png');
-  document.head.appendChild(link);
-  var fav=document.createElement('link');
-  fav.rel='icon';fav.type='image/png';
-  fav.href=c.toDataURL('image/png');
-  document.head.appendChild(fav);
+  var link=document.createElement('link');link.rel='apple-touch-icon';link.href=c.toDataURL('image/png');document.head.appendChild(link);
+  var fav=document.createElement('link');fav.rel='icon';fav.type='image/png';fav.href=c.toDataURL('image/png');document.head.appendChild(fav);
 })();
 </script>
 <style>
@@ -182,15 +142,49 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);font-fam
 </div>
 <div class="version">5MIND BUILDER · V1.0</div>
 <div class="progress-bar" id="progress"></div>
-<div class="status-msg" id="status">opening project builder...</div>
+<div class="status-msg" id="status">opening in Claude app...</div>
 <script>
-const PROJECT_URL='https://claude.ai/project/019d0a7c-5388-7661-8e3c-22ee33c2cd57';
-const container=document.getElementById('embers');
-for(let i=0;i<18;i++){const e=document.createElement('div');e.className='ember';e.style.cssText='left:'+Math.random()*100+'%;bottom:'+Math.random()*20+'%;--d:'+(3+Math.random()*5)+'s;--delay:'+Math.random()*6+'s;--dx:'+((Math.random()-.5)*60)+'px;width:'+(1+Math.random()*2)+'px;height:'+(1+Math.random()*2)+'px;opacity:'+(0.3+Math.random()*0.7)+';';container.appendChild(e);}
+const PROJECT_ID = '019d0a7c-5388-7661-8e3c-22ee33c2cd57';
+const WEB_URL = 'https://claude.ai/project/' + PROJECT_ID;
+
+// Android intent URL — opens Claude app directly, falls back to web
+const ANDROID_INTENT = 'intent://claude.ai/project/' + PROJECT_ID +
+  '#Intent;scheme=https;package=com.anthropic.claude;' +
+  'S.browser_fallback_url=' + encodeURIComponent(WEB_URL) + ';end';
+
+// iOS universal link — Claude app registers claude.ai as associated domain
+// so a normal https URL will open in the app if installed
+const IOS_URL = WEB_URL;
+
+function isAndroid(){ return /android/i.test(navigator.userAgent); }
+function isIOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent); }
+
+const container = document.getElementById('embers');
+for(let i=0;i<18;i++){
+  const e=document.createElement('div');e.className='ember';
+  e.style.cssText='left:'+Math.random()*100+'%;bottom:'+Math.random()*20+'%;--d:'+(3+Math.random()*5)+'s;--delay:'+Math.random()*6+'s;--dx:'+((Math.random()-.5)*60)+'px;width:'+(1+Math.random()*2)+'px;height:'+(1+Math.random()*2)+'px;opacity:'+(0.3+Math.random()*0.7)+';';
+  container.appendChild(e);
+}
+
 const dots=document.querySelectorAll('.step-dot');let di=0;
 setInterval(()=>{dots.forEach(d=>d.classList.remove('active'));dots[di%dots.length].classList.add('active');di++;},700);
-function launch(){document.getElementById('progress').classList.add('loading');document.getElementById('status').classList.add('visible');setTimeout(()=>{window.location.href=PROJECT_URL;},1000);}
-if(sessionStorage.getItem('tm_builder_launched'))launch();
+
+function launch(){
+  document.getElementById('progress').classList.add('loading');
+  document.getElementById('status').classList.add('visible');
+  setTimeout(()=>{
+    if(isAndroid()){
+      // Try intent URL first — opens Claude app directly on Android
+      window.location.href = ANDROID_INTENT;
+    } else {
+      // iOS: universal links mean claude.ai opens in the app automatically
+      // if Claude app is installed and has associated domains configured
+      window.location.href = IOS_URL;
+    }
+  }, 800);
+}
+
+if(sessionStorage.getItem('tm_builder_launched')) launch();
 document.querySelector('.launch-btn').addEventListener('touchstart',()=>{},{passive:true});
 </script>
 </body>
