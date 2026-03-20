@@ -115,9 +115,98 @@ function escapeHTML(str) {
   return div.innerHTML;
 }
 
-// === Settings stub (replaced in Task 6) ===
-function openSettings() { console.warn('Settings not yet implemented'); }
-function closeSettings() {}
+// === Settings Panel ===
+function openSettings() {
+  const overlay = document.getElementById('settings-overlay');
+  const body = document.getElementById('settings-body');
+
+  const currentKey = getApiKey();
+  const slots = getSlots();
+
+  let slotsHTML = '';
+  slots.forEach(slot => {
+    const presets = PRESET_MODELS[slot.id] || [];
+    const isCustom = !presets.includes(slot.model);
+    const optionsHTML = presets.map(m => `<option value="${m}" ${m === slot.model ? 'selected' : ''}>${m}</option>`).join('')
+      + `<option value="__custom" ${isCustom ? 'selected' : ''}>Custom...</option>`;
+
+    slotsHTML += `
+      <div class="settings-slot">
+        <div class="settings-slot-title">
+          <span class="slot-badge" style="background:${slot.color}">${slot.label}</span>
+        </div>
+        <label class="settings-label">Model</label>
+        <select class="settings-select" id="settings-model-${slot.id}" onchange="toggleCustomModel('${slot.id}')">
+          ${optionsHTML}
+        </select>
+        <input class="settings-input" id="settings-custom-${slot.id}" placeholder="Enter OpenRouter model ID" style="margin-top:6px;display:${isCustom ? 'block' : 'none'}">
+      </div>
+    `;
+  });
+
+  body.innerHTML = `
+    <div class="settings-group">
+      <label class="settings-label">OpenRouter API Key</label>
+      <div class="api-key-wrapper">
+        <input class="settings-input" id="settings-api-key" type="password" placeholder="sk-or-...">
+        <button class="api-key-toggle" onclick="toggleApiKeyVisibility()">show</button>
+      </div>
+    </div>
+    ${slotsHTML}
+  `;
+
+  // Set values programmatically to prevent XSS
+  document.getElementById('settings-api-key').value = currentKey;
+  slots.forEach(slot => {
+    const customInput = document.getElementById('settings-custom-' + slot.id);
+    const isCustom = !(PRESET_MODELS[slot.id] || []).includes(slot.model);
+    if (isCustom && customInput) customInput.value = slot.model;
+  });
+
+  overlay.classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.remove('open');
+}
+
+function saveSettings() {
+  const key = document.getElementById('settings-api-key').value.trim();
+  setApiKey(key);
+
+  const slots = getSlots();
+  slots.forEach(slot => {
+    const select = document.getElementById('settings-model-' + slot.id);
+    const custom = document.getElementById('settings-custom-' + slot.id);
+    if (select.value === '__custom') {
+      slot.model = custom.value.trim() || slot.model;
+    } else {
+      slot.model = select.value;
+    }
+  });
+  saveSlots(slots);
+
+  closeSettings();
+  renderAllSlots();
+}
+
+function toggleCustomModel(slotId) {
+  const select = document.getElementById('settings-model-' + slotId);
+  const custom = document.getElementById('settings-custom-' + slotId);
+  custom.style.display = select.value === '__custom' ? 'block' : 'none';
+}
+
+function toggleApiKeyVisibility() {
+  const input = document.getElementById('settings-api-key');
+  const btn = input.nextElementSibling;
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = 'hide';
+  } else {
+    input.type = 'password';
+    btn.textContent = 'show';
+  }
+}
 
 // === API ===
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -268,4 +357,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   document.getElementById('fire-all-btn').addEventListener('click', fireAll);
   document.getElementById('copy-all-btn').addEventListener('click', copyAllResults);
+  document.getElementById('settings-btn').addEventListener('click', openSettings);
+  document.getElementById('settings-close-btn').addEventListener('click', closeSettings);
+  document.getElementById('settings-cancel-btn').addEventListener('click', closeSettings);
+  document.getElementById('settings-save-btn').addEventListener('click', saveSettings);
+  document.getElementById('settings-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeSettings();
+  });
 });
