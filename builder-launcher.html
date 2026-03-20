@@ -14,26 +14,74 @@
   var c=document.createElement('canvas');
   c.width=180;c.height=180;
   var ctx=c.getContext('2d');
+
+  // Background — dark rounded square
   ctx.fillStyle='#0e0a06';
   ctx.beginPath();
   ctx.roundRect(0,0,180,180,36);
   ctx.fill();
+
+  // Outer rotating square border
   ctx.save();ctx.translate(90,80);ctx.rotate(Math.PI/12);
   ctx.strokeStyle='rgba(216,90,48,0.5)';ctx.lineWidth=1.5;
   ctx.beginPath();ctx.roundRect(-44,-44,88,88,6);ctx.stroke();ctx.restore();
+
+  // Inner diamond border
   ctx.save();ctx.translate(90,80);ctx.rotate(Math.PI/4);
   ctx.strokeStyle='rgba(216,90,48,0.3)';ctx.lineWidth=1;
   ctx.beginPath();ctx.roundRect(-32,-32,64,64,4);ctx.stroke();ctx.restore();
-  ctx.fillStyle='#251a0a';ctx.strokeStyle='rgba(216,90,48,0.85)';ctx.lineWidth=1.5;
+
+  // Core box
+  ctx.fillStyle='#251a0a';
+  ctx.strokeStyle='rgba(216,90,48,0.85)';ctx.lineWidth=1.5;
   ctx.beginPath();ctx.roundRect(57,48,66,64,10);ctx.fill();ctx.stroke();
-  ctx.fillStyle='#EF7A48';ctx.font='bold 28px "Courier New",monospace';
-  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('5M',90,74);
-  ctx.fillStyle='#EF9F27';ctx.font='bold 9px "Courier New",monospace';
+
+  // "5M" text
+  ctx.fillStyle='#EF7A48';
+  ctx.font='bold 28px "Courier New",monospace';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('5M',90,74);
+
+  // "BUILDer" text
+  ctx.fillStyle='#EF9F27';
+  ctx.font='bold 9px "Courier New",monospace';
   ctx.fillText('BUILDer',90,96);
-  ctx.fillStyle='rgba(122,90,58,0.7)';ctx.font='7px "Courier New",monospace';
-  ctx.fillText('qualify · deploy',90,148);
-  var link=document.createElement('link');link.rel='apple-touch-icon';link.href=c.toDataURL('image/png');document.head.appendChild(link);
-  var fav=document.createElement('link');fav.rel='icon';fav.type='image/png';fav.href=c.toDataURL('image/png');document.head.appendChild(fav);
+
+  // ── Claude logo badge (bottom-right) ──
+  // White circle background
+  var bx=138, by=138, br=22;
+  ctx.beginPath();
+  ctx.arc(bx,by,br,0,Math.PI*2);
+  ctx.fillStyle='#ffffff';
+  ctx.fill();
+
+  // Claude logo — the Anthropic "A" mark drawn as radiating lines
+  ctx.save();
+  ctx.translate(bx,by);
+  var arms=8, innerR=5, outerR=14;
+  ctx.strokeStyle='#d97757'; // Claude orange-coral
+  ctx.lineWidth=2.2;
+  ctx.lineCap='round';
+  for(var i=0;i<arms;i++){
+    var angle=(i/arms)*Math.PI*2 - Math.PI/2;
+    // Vary length alternately for the asterisk look
+    var len = (i%2===0) ? outerR : outerR*0.72;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(angle)*innerR, Math.sin(angle)*innerR);
+    ctx.lineTo(Math.cos(angle)*len, Math.sin(angle)*len);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Inject as apple-touch-icon + favicon
+  var link=document.createElement('link');
+  link.rel='apple-touch-icon';
+  link.href=c.toDataURL('image/png');
+  document.head.appendChild(link);
+  var fav=document.createElement('link');
+  fav.rel='icon';fav.type='image/png';
+  fav.href=c.toDataURL('image/png');
+  document.head.appendChild(fav);
 })();
 </script>
 <style>
