@@ -60,7 +60,7 @@ function renderSlot(slot) {
     actionsHTML = `<span class="spinner" style="border-color:${slot.color};border-top-color:transparent"></span><span class="slot-timer" id="timer-${slot.id}">0.0s</span>`;
   } else if (state.status === 'complete') {
     bodyHTML = `<div class="slot-response">${escapeHTML(state.response)}</div>`;
-    actionsHTML = `<span class="slot-meta">${state.time}s · ${state.tokens} tokens</span><span class="slot-status-done">Done</span><button class="btn btn-clear" onclick="clearSlot('${slot.id}')">Clear</button>`;
+    actionsHTML = `<span class="slot-meta">${state.time}s · ${state.tokens} tokens</span><span class="slot-status-done">Done</span><button class="btn btn-copy-single" onclick="copySingleResult('${slot.id}')">Copy</button><button class="btn btn-clear" onclick="clearSlot('${slot.id}')">Clear</button>`;
   } else if (state.status === 'error') {
     bodyHTML = `<div class="slot-error">${escapeHTML(state.error)}</div>`;
     actionsHTML = `<span class="slot-status-error">Error</span><button class="btn btn-retry" onclick="retrySlot('${slot.id}')">Retry</button><button class="btn btn-clear" onclick="clearSlot('${slot.id}')">Clear</button>`;
@@ -295,6 +295,31 @@ function retrySlot(slotId) {
     const el = document.getElementById('prompt-' + slotId);
     if (el) el.value = saved;
     fireSlot(slotId);
+  }
+}
+
+// === Copy Single Result ===
+async function copySingleResult(slotId) {
+  const slots = getSlots();
+  const slot = slots.find(s => s.id === slotId);
+  const state = slotStates[slotId];
+  if (!slot || !state || state.status !== 'complete') return;
+
+  let text = `\u2500\u2500\u2500\u2500 ${slot.label} \u2500\u2500\u2500\u2500\n`;
+  text += `Response time: ${state.time}s | Tokens: ${state.tokens}\n\n`;
+  text += state.response;
+
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('Copied!');
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Copied!');
   }
 }
 

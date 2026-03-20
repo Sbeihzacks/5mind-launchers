@@ -66,6 +66,7 @@ body {
 .btn-secondary { background: var(--bg-surface); color: var(--text-secondary); padding: 8px 20px; }
 .btn-clear { background: transparent; color: var(--text-muted); padding: 4px 10px; font-size: 12px; border: 1px solid var(--border); }
 .btn-retry { background: transparent; color: var(--accent-red); padding: 4px 10px; font-size: 12px; border: 1px solid var(--accent-red); }
+.btn-copy-single { background: transparent; color: var(--accent-green); padding: 4px 10px; font-size: 12px; border: 1px solid var(--accent-green); }
 
 /* === Slot Cards === */
 .slots { display: flex; flex-direction: column; gap: 12px; }
