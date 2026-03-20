@@ -105,7 +105,7 @@ function renderAllSlots() {
 }
 
 function updateCopyButton() {
-  const hasResults = Object.values(slotStates).some(s => s.status === 'complete');
+  const hasResults = Object.values(slotStates).some(s => s.status === 'complete' || s.status === 'error');
   document.getElementById('copy-all-btn').style.display = hasResults ? 'block' : 'none';
 }
 
