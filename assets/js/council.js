@@ -119,10 +119,101 @@ function escapeHTML(str) {
 function openSettings() { console.warn('Settings not yet implemented'); }
 function closeSettings() {}
 
+// === API ===
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+async function callOpenRouter(model, prompt) {
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error('No API key set. Open Settings to add your OpenRouter key.');
+
+  const res = await fetch(OPENROUTER_URL, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API error: ${res.status}`);
+  }
+
+  return res.json();
+}
+
+// === Fire Logic ===
+async function fireSlot(slotId) {
+  const promptEl = document.getElementById('prompt-' + slotId);
+  const prompt = promptEl?.value?.trim();
+  if (!prompt) return;
+
+  const slots = getSlots();
+  const slot = slots.find(s => s.id === slotId);
+  if (!slot) return;
+
+  // Set loading state
+  slotStates[slotId] = { status: 'loading', response: '', time: 0, tokens: 0, error: '', prompt: prompt };
+  renderAllSlots();
+
+  // Start timer
+  const startTime = performance.now();
+  const timerEl = document.getElementById('timer-' + slotId);
+  const timerInterval = setInterval(() => {
+    if (timerEl) timerEl.textContent = ((performance.now() - startTime) / 1000).toFixed(1) + 's';
+  }, 100);
+
+  try {
+    const data = await callOpenRouter(slot.model, prompt);
+    clearInterval(timerInterval);
+    const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
+    const content = data.choices?.[0]?.message?.content || '(empty response)';
+    const tokens = data.usage?.total_tokens || 0;
+
+    slotStates[slotId] = { status: 'complete', response: content, time: elapsed, tokens: tokens, error: '', prompt: prompt };
+  } catch (err) {
+    clearInterval(timerInterval);
+    slotStates[slotId] = { status: 'error', response: '', time: 0, tokens: 0, error: err.message, prompt: prompt };
+  }
+
+  renderAllSlots();
+}
+
+async function fireAll() {
+  const slots = getSlots();
+  const toFire = slots.filter(s => {
+    const el = document.getElementById('prompt-' + s.id);
+    return el && el.value.trim();
+  });
+  if (toFire.length === 0) return;  // No-op if all empty
+  await Promise.allSettled(toFire.map(s => fireSlot(s.id)));
+}
+
+function clearSlot(slotId) {
+  slotStates[slotId] = { status: 'empty', response: '', time: 0, tokens: 0, error: '' };
+  renderAllSlots();
+}
+
+function retrySlot(slotId) {
+  const saved = slotStates[slotId]?.prompt;
+  slotStates[slotId] = { status: 'empty', response: '', time: 0, tokens: 0, error: '' };
+  renderAllSlots();
+  if (saved) {
+    const el = document.getElementById('prompt-' + slotId);
+    if (el) el.value = saved;
+    fireSlot(slotId);
+  }
+}
+
 // === Init ===
 document.addEventListener('DOMContentLoaded', () => {
   renderAllSlots();
   if (!getApiKey()) {
     openSettings();
   }
+  document.getElementById('fire-all-btn').addEventListener('click', fireAll);
 });
